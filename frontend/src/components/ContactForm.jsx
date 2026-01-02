@@ -6,30 +6,55 @@ function ContactForm({ fetchContacts }) {
     name: "",
     email: "",
     phone: "",
-    message: ""
+    message: "",
   });
 
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     let err = {};
-    if (!form.name) err.name = "Name is required";
+
+    if (!form.name.trim()) err.name = "Name is required";
     if (!/\S+@\S+\.\S+/.test(form.email))
-      err.email = "Invalid email";
-    if (!form.phone) err.phone = "Phone is required";
+      err.email = "Invalid email address";
+    if (!form.phone.trim()) err.phone = "Phone is required";
+
     setErrors(err);
     return Object.keys(err).length === 0;
   };
 
   const submitHandler = async (e) => {
     e.preventDefault();
+
     if (!validate()) return;
 
-    await axios.post("http://localhost:5000/api/contacts", form);
-    setForm({ name: "", email: "", phone: "", message: "" });
-    setSuccess("Contact added successfully!");
-    fetchContacts();
+    try {
+      setLoading(true);
+
+      await axios.post(
+        "https://mern-contact-backend.onrender.com/api/contacts",
+        form
+      );
+
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+      });
+
+      setSuccess("Contact added successfully!");
+      setErrors({});
+      fetchContacts();
+    } catch (error) {
+      console.error(error);
+      setSuccess("");
+      alert("Failed to submit contact. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -74,10 +99,10 @@ function ContactForm({ fetchContacts }) {
       />
 
       <button
-        disabled={!form.name || !form.email || !form.phone}
-        className="w-full font-bold text-3xl bg-blue-600 text-black p-2 rounded border border-black"
+        disabled={loading}
+        className="w-full font-bold text-3xl bg-blue-600 text-black p-2 rounded border border-black disabled:opacity-50"
       >
-        Submit
+        {loading ? "Submitting..." : "Submit"}
       </button>
 
       {success && <p className="text-green-600">{success}</p>}
